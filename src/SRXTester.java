@@ -6,10 +6,15 @@ import java.awt.event.ActionListener;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -179,17 +184,18 @@ public class SRXTester extends JPanel implements ActionListener {
 		//Read through the input file and save the output to a list
 		List<String> output = new ArrayList<String>();
 		String scan;
-		FileReader file = null;
+		FileInputStream file = null;
 		try {
-			file = new FileReader(inputFile);
+			file = new FileInputStream(inputFile);
 		}
 		catch (FileNotFoundException ex) {
 			log.append("Unable to find input file: " + inputFile.getName() + newline);
 			return;
 		}
 		
-        BufferedReader br = new BufferedReader(file);
+        BufferedReader br;
         try {
+        	br = new BufferedReader(new InputStreamReader(file, "UTF8"));
         	int sentenceCount = 1;
 	        while((scan = br.readLine()) != null)
 	        {
@@ -219,25 +225,37 @@ public class SRXTester extends JPanel implements ActionListener {
 	        	log.append(newline);
 	        }
 	        br.close();
-        }
-        catch (IOException ex) {
+        } catch (UnsupportedEncodingException e) {
+			log.append("UnsupportedEncodingException while reading input file: " + e.getMessage() + newline);
+			return;
+		} catch (IOException ex) {
         	log.append("IOException occurred while reading input file: " + inputFile.getName() + newline);
         	return;
-        }
+        } catch (Exception e) {
+			log.append("Exception while reading input file: " + e.getMessage() + newline);
+			return;
+		}
         
         //Write out the output sentences
-        FileWriter fw;
+        FileOutputStream fos;
 		try {
-			fw = new FileWriter(outputFile);
-			BufferedWriter bw = new BufferedWriter(fw);
+			fos = new FileOutputStream(outputFile);
+			OutputStreamWriter osw = new OutputStreamWriter(fos, "UTF8");
 			Iterator<String> iter = output.iterator();
 			while (iter.hasNext()) {
 				String out = iter.next();
-				bw.write(out + newline);
+				osw.append(out + newline);
 			}
-	        bw.close();
+			osw.flush();
+	        osw.close();
+		} catch (UnsupportedEncodingException e) {
+			log.append("UnsupportedEncodingException while writing output: " + e.getMessage() + newline);
+			return;
 		} catch (IOException e) {
 			log.append("IOException while writing output: " + e.getMessage() + newline);
+			return;
+		} catch (Exception e) {
+			log.append("Exception while writing output: " + e.getMessage() + newline);
 			return;
 		}
         
